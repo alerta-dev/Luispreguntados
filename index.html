@@ -1,0 +1,1269 @@
+# 🎮 Los 8 Escalones - Juego de Trivia Completo
+
+Aquí tienes el código completo, listo para copiar y guardar como archivo `.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Los 8 Escalones - Trivia</title>
+    <style>
+        /* ========== RESET Y VARIABLES ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #050510;
+            --bg-blue: #0a1628;
+            --bg-purple: #120a20;
+            --neon-cyan: #00f5ff;
+            --neon-gold: #ffd700;
+            --neon-pink: #ff0080;
+            --success: #00ff88;
+            --error: #ff3366;
+            --text-primary: #ffffff;
+            --text-secondary: #8899aa;
+            --glass-bg: rgba(10, 20, 40, 0.85);
+            --glass-border: rgba(0, 245, 255, 0.3);
+        }
+
+        /* ========== ESTILOS BASE ========== */
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: 
+                radial-gradient(ellipse at top, rgba(0, 100, 150, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(100, 0, 150, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-blue) 50%, var(--bg-purple) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Efecto de luces de fondo */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 245, 255, 0.03) 0%, transparent 25%),
+                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.03) 0%, transparent 25%),
+                radial-gradient(circle at 40% 40%, rgba(255, 0, 128, 0.02) 0%, transparent 20%);
+            animation: ambientLight 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes ambientLight {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(2%, 2%) rotate(1deg); }
+            50% { transform: translate(-1%, 3%) rotate(-1deg); }
+            75% { transform: translate(3%, -2%) rotate(2deg); }
+        }
+
+        /* ========== CONTENEDOR PRINCIPAL ========== */
+        .game-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ========== HEADER ========== */
+        .game-header {
+            text-align: center;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .game-title {
+            font-size: clamp(1.8rem, 6vw, 3.5rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-gold) 50%, var(--neon-pink) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            display: inline-block;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        .game-title::before {
+            content: '🏆';
+            margin-right: 15px;
+            -webkit-text-fill-color: initial;
+        }
+
+        .game-title::after {
+            content: '🏆';
+            margin-left: 15px;
+            -webkit-text-fill-color: initial;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { 
+                filter: drop-shadow(0 0 10px var(--neon-cyan)) drop-shadow(0 0 30px rgba(0, 245, 255, 0.3));
+            }
+            50% { 
+                filter: drop-shadow(0 0 20px var(--neon-gold)) drop-shadow(0 0 40px rgba(255, 215, 0, 0.4));
+            }
+        }
+
+        /* ========== VIDAS ========== */
+        .lives-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .life {
+            font-size: 2rem;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: drop-shadow(0 0 8px rgba(255, 50, 100, 0.6));
+        }
+
+        .life.lost {
+            opacity: 0.15;
+            transform: scale(0.6) rotate(15deg);
+            filter: grayscale(100%);
+        }
+
+        /* ========== PANTALLAS ========== */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== PANTALLA DE INICIO ========== */
+        .start-screen {
+            gap: 40px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+        }
+
+        .instructions-box {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px 40px;
+            max-width: 650px;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 40px rgba(0, 245, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .instructions-box h2 {
+            color: var(--neon-gold);
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .instructions-list {
+            list-style: none;
+            text-align: left;
+        }
+
+        .instructions-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 1.05rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            line-height: 1.5;
+        }
+
+        .instructions-list li:last-child {
+            border-bottom: none;
+        }
+
+        .instructions-list li::before {
+            content: '✦';
+            color: var(--neon-cyan);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* ========== BOTONES PRINCIPALES ========== */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-gold) 0%, #ff9500 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 18px 60px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1a1a2e;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 5px 30px rgba(255, 215, 0, 0.4),
+                0 0 0 0 rgba(255, 215, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+                0 10px 40px rgba(255, 215, 0, 0.5),
+                0 0 60px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* ========== LAYOUT DEL JUEGO ========== */
+        .game-layout {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            align-items: flex-start;
+        }
+
+        .game-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .game-sidebar {
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        /* ========== ESCALONES ========== */
+        .stairs-container {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stairs-title {
+            text-align: center;
+            color: var(--neon-gold);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stairs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stair {
+            height: 42px;
+            background: linear-gradient(135deg, #1a2540 0%, #0d1525 100%);
+            border: 2px solid #2a3a5a;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stair.completed {
+            background: linear-gradient(135deg, var(--neon-gold) 0%, #cc8800 100%);
+            border-color: var(--neon-gold);
+            color: #1a1a2e;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .stair.active {
+            background: linear-gradient(135deg, var(--neon-cyan) 0%, #0088aa 100%);
+            border-color: var(--neon-cyan);
+            color: #1a1a2e;
+            animation: stepPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .stair.active::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes stepPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 245, 255, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(0, 245, 255, 0.8), 0 0 60px rgba(0, 245, 255, 0.4); }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .stair-trophy {
+            font-size: 1.4rem;
+        }
+
+        /* ========== COMODINES ========== */
+        .lifelines-section {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .lifeline-btn {
+            position: relative;
+            width: 85px;
+            height: 85px;
+            background: linear-gradient(145deg, #1a0a30 0%, #2a1545 100%);
+            border: 3px solid var(--neon-gold);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: var(--neon-gold);
+            font-weight: 700;
+            box-shadow: 
+                0 0 15px rgba(255, 215, 0, 0.2),
+                inset 0 0 20px rgba(255, 215, 0, 0.05);
+        }
+
+        .lifeline-btn:hover:not(:disabled) {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 
+                0 0 30px rgba(255, 215, 0, 0.5),
+                0 0 60px rgba(255, 215, 0, 0.2),
+                inset 0 0 30px rgba(255, 215, 0, 0.1);
+            border-color: #fff;
+        }
+
+        .lifeline-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .lifeline-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            border-color: #444;
+            filter: grayscale(100%);
+        }
+
+        .lifeline-btn .lifeline-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        .lifeline-btn .lifeline-label {
+            font-size: 0.65rem;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lifeline-btn.active-power {
+            animation: powerActive 0.8s ease-in-out infinite;
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        @keyframes powerActive {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.8); }
+        }
+
+        /* Tooltip de comodines */
+        .tooltip {
+            position: absolute;
+            bottom: calc(100% + 15px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 10px solid transparent;
+            border-top-color: var(--neon-cyan);
+        }
+
+        .lifeline-btn:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        /* ========== CONTENEDOR DE PREGUNTA ========== */
+        .question-box {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 35px 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 50px rgba(0, 245, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .question-step {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .double-chance-badge {
+            background: linear-gradient(135deg, var(--success), #00aa66);
+            color: #000;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: none;
+            animation: badgePulse 1s ease-in-out infinite;
+        }
+
+        .double-chance-badge.visible {
+            display: block;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .question-text {
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
+            line-height: 1.5;
+            margin-bottom: 30px;
+            color: var(--text-primary);
+        }
+
+        /* ========== OPCIONES ========== */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: linear-gradient(145deg, #1a2545 0%, #0d1525 100%);
+            border: 2px solid #3a4a6a;
+            border-radius: 15px;
+            padding: 18px 25px;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .option-btn:hover:not(:disabled)::before {
+            opacity: 1;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--neon-cyan);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 10px 30px rgba(0, 245, 255, 0.2),
+                0 0 0 1px rgba(0, 245, 255, 0.3);
+        }
+
+        .option-btn:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(145deg, #00aa55 0%, var(--success) 100%);
+            border-color: var(--success);
+            color: #000;
+            font-weight: 700;
+            animation: correctPop 0.5s ease;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes correctPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        .option-btn.incorrect {
+            background: linear-gradient(145deg, #aa3333 0%, var(--error) 100%);
+            border-color: var(--error);
+            color: #fff;
+            animation: shake 0.6s ease;
+            box-shadow: 0 0 40px rgba(255, 51, 102, 0.5);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-12px) rotate(-1deg); }
+            20% { transform: translateX(12px) rotate(1deg); }
+            30% { transform: translateX(-12px) rotate(-1deg); }
+            40% { transform: translateX(12px) rotate(1deg); }
+            50% { transform: translateX(-8px); }
+            60% { transform: translateX(8px); }
+            70% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        .option-btn.eliminated {
+            opacity: 0.2;
+            pointer-events: none;
+            text-decoration: line-through;
+            border-style: dashed;
+            transform: scale(0.95);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        /* ========== PANTALLA DE VICTORIA ========== */
+        .victory-screen {
+            text-align: center;
+            gap: 25px;
+        }
+
+        .victory-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--neon-gold), #fff, var(--neon-gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: victoryGlow 1.5s ease-in-out infinite;
+            text-shadow: none;
+        }
+
+        @keyframes victoryGlow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 215, 0, 1)) drop-shadow(0 0 80px rgba(255, 215, 0, 0.5)); }
+        }
+
+        .victory-trophy {
+            font-size: 8rem;
+            animation: trophyBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(-5deg); }
+            75% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .victory-message {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        /* ========== PANTALLA DE DERROTA ========== */
+        .defeat-screen {
+            text-align: center;
+            gap: 25px;
+        }
+
+        .defeat-title {
+            font-size: clamp(2rem, 7vw, 3.5rem);
+            font-weight: 900;
+            color: var(--error);
+            text-shadow: 0 0 30px rgba(255, 51, 102, 0.6);
+        }
+
+        .defeat-icon {
+            font-size: 6rem;
+        }
+
+        .score-display {
+            font-size: 1.3rem;
+            color: var(--neon-cyan);
+        }
+
+        /* ========== CONFETI ========== */
+        .confetti-piece {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            top: -20px;
+            z-index: 9999;
+            animation: confettiFall linear forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            0% { 
+                transform: translateY(0) rotate(0deg); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translateY(100vh) rotate(1080deg); 
+                opacity: 0;
+            }
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 900px) {
+            .game-layout {
+                flex-direction: column;
+            }
+
+            .game-sidebar {
+                width: 100%;
+                order: -1;
+            }
+
+            .stairs-container {
+                padding: 15px;
+            }
+
+            .stairs {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .stair {
+                width: 50px;
+                height: 50px;
+                font-size: 0.9rem;
+            }
+
+            .stairs-title {
+                display: none;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .question-box {
+                padding: 25px 20px;
+            }
+
+            .lifeline-btn {
+                width: 70px;
+                height: 70px;
+            }
+
+            .lifeline-btn .lifeline-icon {
+                font-size: 1.3rem;
+            }
+
+            .tooltip {
+                font-size: 0.75rem;
+                padding: 8px 12px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .game-container {
+                padding: 10px;
+            }
+
+            .btn-primary {
+                padding: 15px 40px;
+                font-size: 1.1rem;
+            }
+
+            .instructions-box {
+                padding: 20px;
+            }
+
+            .instructions-list li {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- ========== HEADER ========== -->
+        <header class="game-header">
+            <h1 class="game-title">Los 8 Escalones</h1>
+            <div class="lives-container" id="livesContainer">
+                <span class="life" id="life1">❤️</span>
+                <span class="life" id="life2">❤️</span>
+                <span class="life" id="life3">❤️</span>
+            </div>
+        </header>
+
+        <!-- ========== PANTALLA DE INICIO ========== -->
+        <section class="screen start-screen active" id="startScreen">
+            <p class="welcome-text">¡Bienvenido al desafío de cultura general más emocionante!</p>
+            
+            <div class="instructions-box">
+                <h2>📋 Cómo Jugar</h2>
+                <ul class="instructions-list">
+                    <li>Responde <strong>8 preguntas</strong> correctamente para llegar a la cima y ganar 🏆</li>
+                    <li>Tienes <strong>3 vidas</strong> (❤️). Si las pierdes todas, el juego termina</li>
+                    <li>Dispones de <strong>3 comodines</strong> únicos para ayudarte (¡úsalos con sabiduría!)</li>
+                    <li><strong>Pasa el cursor</strong> sobre los comodines para ver qué hacen</li>
+                    <li>Cada acierto te sube un escalón. ¡Llega al escalón 8 para ganar!</li>
+                </ul>
+            </div>
+            
+            <button class="btn-primary" onclick="startGame()">🎮 ¡COMENZAR JUEGO!</button>
+        </section>
+
+        <!-- ========== PANTALLA DE JUEGO ========== -->
+        <section class="screen game-screen" id="gameScreen">
+            <div class="game-layout">
+                <!-- Panel Principal -->
+                <div class="game-main">
+                    <!-- Comodines -->
+                    <div class="lifelines-section">
+                        <button class="lifeline-btn" id="btn5050" onclick="useLifeline5050()">
+                            <span class="lifeline-icon">50/50</span>
+                            <span class="tooltip">🎯 Elimina 2 respuestas incorrectas</span>
+                        </button>
+                        
+                        <button class="lifeline-btn" id="btnDouble" onclick="useLifelineDouble()">
+                            <span class="lifeline-icon">×2</span>
+                            <span class="lifeline-label">Doble</span>
+                            <span class="tooltip">🛡️ Permite fallar una vez sin perder vida</span>
+                        </button>
+                        
+                        <button class="lifeline-btn" id="btnSkip" onclick="useLifelineSkip()">
+                            <span class="lifeline-icon">⏭️</span>
+                            <span class="lifeline-label">Saltar</span>
+                            <span class="tooltip">🦘 Salta al siguiente escalón sin responder</span>
+                        </button>
+                    </div>
+
+                    <!-- Caja de Pregunta -->
+                    <div class="question-box" id="questionBox">
+                        <div class="question-header">
+                            <span class="question-step" id="questionStep">Escalón 1 de 8</span>
+                            <span class="double-chance-badge" id="doubleBadge">🛡️ DOBLE CHANCE ACTIVO</span>
+                        </div>
+                        <p class="question-text" id="questionText">La pregunta aparecerá aquí...</p>
+                        
+                        <div class="options-grid" id="optionsGrid">
+                            <button class="option-btn" data-index="0">Opción A</button>
+                            <button class="option-btn" data-index="1">Opción B</button>
+                            <button class="option-btn" data-index="2">Opción C</button>
+                            <button class="option-btn" data-index="3">Opción D</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Lateral - Escalones -->
+                <aside class="game-sidebar">
+                    <div class="stairs-container">
+                        <h3 class="stairs-title">🪜 Tu Progreso</h3>
+                        <div class="stairs" id="stairsGrid">
+                            <!-- Los escalones se generan dinámicamente -->
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- ========== PANTALLA DE VICTORIA ========== -->
+        <section class="screen victory-screen" id="victoryScreen">
+            <div class="victory-trophy">🏆</div>
+            <h2 class="victory-title">¡GANASTE!</h2>
+            <p class="victory-message">¡Felicitaciones! Has conquistado los 8 escalones</p>
+            <p class="victory-message">¡Eres un verdadero campeón del conocimiento!</p>
+            <button class="btn-primary" onclick="restartGame()">🔄 JUGAR DE NUEVO</button>
+        </section>
+
+        <!-- ========== PANTALLA DE DERROTA ========== -->
+        <section class="screen defeat-screen" id="defeatScreen">
+            <div class="defeat-icon">💔</div>
+            <h2 class="defeat-title">¡GAME OVER!</h2>
+            <p class="victory-message">Has perdido todas tus vidas</p>
+            <p class="score-display" id="finalScoreDisplay">Llegaste al escalón: 0</p>
+            <button class="btn-primary" onclick="restartGame()">🔄 INTENTAR DE NUEVO</button>
+        </section>
+    </div>
+
+    <script>
+        // ==================== BANCO DE PREGUNTAS ====================
+        const QUESTIONS_DATABASE = [
+            {
+                question: "¿Cuál es el planeta más grande del Sistema Solar?",
+                options: ["Marte", "Júpiter", "Saturno", "Neptuno"],
+                correct: 1
+            },
+            {
+                question: "¿En qué año llegó el primer ser humano a la Luna?",
+                options: ["1965", "1969", "1971", "1973"],
+                correct: 1
+            },
+            {
+                question: "¿Cuál es el océano más extenso del mundo?",
+                options: ["Atlántico", "Índico", "Pacífico", "Ártico"],
+                correct: 2
+            },
+            {
+                question: "¿Quién pintó la famosa obra 'La Mona Lisa'?",
+                options: ["Van Gogh", "Picasso", "Da Vinci", "Rembrandt"],
+                correct: 2
+            },
+            {
+                question: "¿Cuál es el símbolo químico del oro?",
+                options: ["Ag", "Au", "Fe", "Cu"],
+                correct: 1
+            },
+            {
+                question: "¿En qué continente se encuentra Egipto?",
+                options: ["Asia", "Europa", "África", "Oceanía"],
+                correct: 2
+            },
+            {
+                question: "¿Cuántos huesos tiene aproximadamente un cuerpo humano adulto?",
+                options: ["156", "206", "256", "306"],
+                correct: 1
+            },
+            {
+                question: "¿Quién escribió 'Cien años de soledad'?",
+                options: ["Julio Cortázar", "Gabriel García Márquez", "Mario Vargas Llosa", "Pablo Neruda"],
+                correct: 1
+            },
+            {
+                question: "¿Cuál es la capital de Australia?",
+                options: ["Sídney", "Melbourne", "Canberra", "Brisbane"],
+                correct: 2
+            },
+            {
+                question: "¿Qué instrumento musical tiene 88 teclas?",
+                options: ["Órgano", "Piano", "Acordeón", "Clavicordio"],
+                correct: 1
+            },
+            {
+                question: "¿En qué año comenzó la Segunda Guerra Mundial?",
+                options: ["1936", "1939", "1941", "1942"],
+                correct: 1
+            },
+            {
+                question: "¿Cuál es el río más largo del mundo?",
+                options: ["Amazonas", "Nilo", "Yangtsé", "Misisipi"],
+                correct: 0
+            },
+            {
+                question: "¿Quién desarrolló la teoría de la relatividad?",
+                options: ["Isaac Newton", "Albert Einstein", "Stephen Hawking", "Nikola Tesla"],
+                correct: 1
+            },
+            {
+                question: "¿Cuál es el país con mayor población del mundo?",
+                options: ["Estados Unidos", "India", "China", "Indonesia"],
+                correct: 1
+            },
+            {
+                question: "¿De qué país es originario el sushi?",
+                options: ["China", "Corea", "Japón", "Tailandia"],
+                correct: 2
+            },
+            {
+                question: "¿Cuántos colores tiene el arcoíris?",
+                options: ["5", "6", "7", "8"],
+                correct: 2
+            },
+            {
+                question: "¿Cuál es el metal más abundante en la corteza terrestre?",
+                options: ["Hierro", "Aluminio", "Cobre", "Zinc"],
+                correct: 1
+            },
+            {
+                question: "¿Qué vitamina se obtiene principalmente del sol?",
+                options: ["Vitamina A", "Vitamina C", "Vitamina D", "Vitamina E"],
+                correct: 2
+            }
+        ];
+
+        // ==================== ESTADO DEL JUEGO ====================
+        let gameState = {
+            currentStep: 0,
+            lives: 3,
+            questions: [],
+            currentQuestionIndex: 0,
+            lifelines: {
+                fifty: true,
+                double: true,
+                skip: true
+            },
+            doubleChanceActive: false,
+            canAnswer: true
+        };
+
+        // ==================== FUNCIONES DE UTILIDAD ====================
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // ==================== RENDERIZADO ====================
+        function renderStairs() {
+            const container = document.getElementById('stairsGrid');
+            container.innerHTML = '';
+            
+            for (let i = 8; i >= 1; i--) {
+                const stair = document.createElement('div');
+                stair.className = 'stair';
+                stair.id = `stair-${i}`;
+                
+                if (i === 8) {
+                    stair.innerHTML = '<span class="stair-trophy">🏆</span>';
+                } else {
+                    stair.textContent = i;
+                }
+                
+                // Aplicar estados
+                if (i < gameState.currentStep + 1) {
+                    stair.classList.add('completed');
+                } else if (i === gameState.currentStep + 1) {
+                    stair.classList.add('active');
+                }
+                
+                container.appendChild(stair);
+            }
+        }
+
+        function renderLives() {
+            for (let i = 1; i <= 3; i++) {
+                const life = document.getElementById(`life${i}`);
+                if (i > gameState.lives) {
+                    life.classList.add('lost');
+                } else {
+                    life.classList.remove('lost');
+                }
+            }
+        }
+
+        function renderQuestion() {
+            const question = gameState.questions[gameState.currentQuestionIndex];
+            
+            document.getElementById('questionStep').textContent = 
+                `Escalón ${gameState.currentStep + 1} de 8`;
+            document.getElementById('questionText').textContent = question.question;
+            
+            const optionButtons = document.querySelectorAll('.option-btn');
+            optionButtons.forEach((btn, index) => {
+                btn.textContent = question.options[index];
+                btn.className = 'option-btn';
+                btn.disabled = false;
+                btn.onclick = () => handleAnswer(index);
+            });
+
+            // Mostrar badge de doble chance si está activo
+            const doubleBadge = document.getElementById('doubleBadge');
+            doubleBadge.classList.toggle('visible', gameState.doubleChanceActive);
+        }
+
+        function renderLifelines() {
+            document.getElementById('btn5050').disabled = !gameState.lifelines.fifty;
+            document.getElementById('btnDouble').disabled = !gameState.lifelines.double;
+            document.getElementById('btnSkip').disabled = !gameState.lifelines.skip;
+            
+            // Mostrar estado activo del doble chance
+            document.getElementById('btnDouble').classList.toggle(
+                'active-power', 
+                gameState.doubleChanceActive
+            );
+        }
+
+        // ==================== LÓGICA DEL JUEGO ====================
+        function startGame() {
+            // Reiniciar estado
+            gameState = {
+                currentStep: 0,
+                lives: 3,
+                questions: shuffleArray(QUESTIONS_DATABASE).slice(0, 12),
+                currentQuestionIndex: 0,
+                lifelines: { fifty: true, double: true, skip: true },
+                doubleChanceActive: false,
+                canAnswer: true
+            };
+
+            renderStairs();
+            renderLives();
+            renderLifelines();
+            renderQuestion();
+            showScreen('gameScreen');
+        }
+
+        function handleAnswer(selectedIndex) {
+            if (!gameState.canAnswer) return;
+            
+            const question = gameState.questions[gameState.currentQuestionIndex];
+            const buttons = document.querySelectorAll('.option-btn');
+            const isCorrect = selectedIndex === question.correct;
+
+            if (isCorrect) {
+                // ✅ Respuesta correcta
+                gameState.canAnswer = false;
+                buttons[selectedIndex].classList.add('correct');
+                
+                setTimeout(() => {
+                    gameState.currentStep++;
+                    gameState.currentQuestionIndex++;
+                    gameState.doubleChanceActive = false;
+                    gameState.canAnswer = true;
+                    
+                    if (gameState.currentStep >= 8) {
+                        showVictory();
+                    } else {
+                        renderStairs();
+                        renderLifelines();
+                        renderQuestion();
+                    }
+                }, 1200);
+            } else {
+                // ❌ Respuesta incorrecta
+                buttons[selectedIndex].classList.add('incorrect');
+                
+                if (gameState.doubleChanceActive) {
+                    // Usar el doble chance
+                    gameState.doubleChanceActive = false;
+                    buttons[selectedIndex].classList.add('eliminated');
+                    buttons[selectedIndex].disabled = true;
+                    renderLifelines();
+                    document.getElementById('doubleBadge').classList.remove('visible');
+                } else {
+                    gameState.canAnswer = false;
+                    buttons[question.correct].classList.add('correct');
+                    gameState.lives--;
+                    renderLives();
+                    
+                    setTimeout(() => {
+                        if (gameState.lives <= 0) {
+                            showDefeat();
+                        } else {
+                            gameState.currentQuestionIndex++;
+                            gameState.canAnswer = true;
+                            
+                            // Asegurar que hay más preguntas
+                            if (gameState.currentQuestionIndex >= gameState.questions.length) {
+                                gameState.questions = [
+                                    ...gameState.questions,
+                                    ...shuffleArray(QUESTIONS_DATABASE).slice(0, 5)
+                                ];
+                            }
+                            renderQuestion();
+                        }
+                    }, 1800);
+                }
+            }
+        }
+
+        // ==================== COMODINES ====================
+        function useLifeline5050() {
+            if (!gameState.lifelines.fifty || !gameState.canAnswer) return;
+            
+            gameState.lifelines.fifty = false;
+            renderLifelines();
+
+            const question = gameState.questions[gameState.currentQuestionIndex];
+            const buttons = document.querySelectorAll('.option-btn');
+            
+            // Obtener índices incorrectos
+            const incorrectIndices = [];
+            for (let i = 0; i < 4; i++) {
+                if (i !== question.correct) {
+                    incorrectIndices.push(i);
+                }
+            }
+            
+            // Eliminar 2 respuestas aleatorias incorrectas
+            const toEliminate = shuffleArray(incorrectIndices).slice(0, 2);
+            toEliminate.forEach(index => {
+                buttons[index].classList.add('eliminated');
+                buttons[index].disabled = true;
+            });
+        }
+
+        function useLifelineDouble() {
+            if (!gameState.lifelines.double || !gameState.canAnswer) return;
+            
+            gameState.lifelines.double = false;
+            gameState.doubleChanceActive = true;
+            renderLifelines();
+            document.getElementById('doubleBadge').classList.add('visible');
+        }
+
+        function useLifelineSkip() {
+            if (!gameState.lifelines.skip || !gameState.canAnswer) return;
+            
+            gameState.lifelines.skip = false;
+            gameState.currentStep++;
+            gameState.currentQuestionIndex++;
+            
+            if (gameState.currentStep >= 8) {
+                showVictory();
+            } else {
+                renderStairs();
+                renderLifelines();
+                renderQuestion();
+            }
+        }
+
+        // ==================== PANTALLAS FINALES ====================
+        function showVictory() {
+            showScreen('victoryScreen');
+            createConfetti();
+        }
+
+        function showDefeat() {
+            document.getElementById('finalScoreDisplay').textContent = 
+                `Llegaste al escalón: ${gameState.currentStep}`;
+            showScreen('defeatScreen');
+        }
+
+        function restartGame() {
+            showScreen('startScreen');
+        }
+
+        // ==================== EFECTOS VISUALES ====================
+        function createConfetti() {
+            const colors = ['#ffd700', '#00f5ff', '#ff6b6b', '#4ecdc4', '#ff0080', '#00ff88', '#ff9500'];
+            const shapes = ['square', 'circle'];
+            
+            for (let i = 0; i < 150; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti-piece';
+                    confetti.style.left = `${Math.random() * 100}vw`;
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = shapes[Math.floor(Math.random() * shapes.length)] === 'circle' ? '50%' : '3px';
+                    confetti.style.animationDuration = `${2 + Math.random() * 3}s`;
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    confetti.style.width = `${8 + Math.random() * 10}px`;
+                    confetti.style.height = `${8 + Math.random() * 10}px`;
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 5000);
+                }, i * 25);
+            }
+        }
+
+        // ==================== INICIALIZACIÓN ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStairs();
+        });
+    </script>
+</body>
+</html>
+
+
+¡Listo para jugar! 🎮
